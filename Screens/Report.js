@@ -1,4 +1,6 @@
 import { View,Text } from "react-native";
+import * as SMS from 'expo-sms';
+import * as MailComposer from 'expo-mail-composer';
 
 const Report = ({ navigation }) => {
   return (

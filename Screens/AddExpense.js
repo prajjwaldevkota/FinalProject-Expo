@@ -4,163 +4,179 @@ import { Dialog, CheckBox } from "@rneui/themed";
 import {
   StyleSheet,
   ImageBackground,
-  Modal,
   Text,
   View,
   Pressable,
+  Alert
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 
 const EXPENSES_FILE_URI = FileSystem.documentDirectory + "expenses.json";
 
-const AddExppense = (props) => {
+const AddExpense = () => {
   const [enteredItem, setEnteredItem] = useState("");
   const [enteredPrice, setEnteredPrice] = useState(0);
   const [enteredCategory, setCategory] = useState("Others");
-  const [transactionItems, setTransactionItems] = useState([]);
-  const [currentId, setCurrentId] = useState(9);
+  const [ExpenseItems, setExpenseItems] = useState([]);
+  const [currentId, setCurrentId] = useState(1);
   const [visible, setVisible] = useState(false);
   const [checked, setChecked] = useState(0);
 
-  function handleTitleInput(enteredValue) {
+  const handleTitleInput = (enteredValue) => {
     setEnteredItem(enteredValue);
-  }
+  };
 
-  function handlePriceInput(enteredValue) {
+  const handlePriceInput = (enteredValue) => {
     setEnteredPrice(enteredValue);
-  }
+  };
 
-  function handleCategoryInput(enteredCategory) {
+  const handleCategoryInput = (enteredCategory) => {
     setCategory(enteredCategory);
-  }
+  };
 
-  function addTransactionHandler() {
-    const date = new Date().getDate();
-    const month = new Date().getMonth() + 1;
-    const year = new Date().getFullYear();
-    const hours = new Date().getHours();
-    const min = new Date().getMinutes();
-    const transaction = {
+  const addExpenseHandler = async () => {
+    const date = new Date();
+    const Expense = {
       id: currentId,
-      addDate: date + "-" + "Nov",
-      addTime: hours + ":" + min,
-      transactionItems: transactionItems,
+      date: date.toISOString().split('T')[0],
+      ExpenseItems: [...ExpenseItems],
     };
-    FileSystem.readAsStringAsync(EXPENSES_FILE_URI)
-      .then((result) => {
-        const existingTransactions = JSON.parse(result) || [];
-        const updatedTransactions = [...existingTransactions, transaction];
-        return FileSystem.writeAsStringAsync(
-          EXPENSES_FILE_URI,
-          JSON.stringify(updatedTransactions)
-        );
-      })
-      .then(() => {
-        props.onAddTransaction(transaction);
-        setCurrentId(currentId + 1);
-        setTransactionItems([]);
-        props.onCancel();
-      })
-      .catch((error) => console.error("Error:", error));
-  }
+  
+    try {
+      const existingExpensesContent = await FileSystem.readAsStringAsync(
+        EXPENSES_FILE_URI
+      );
+      const existingExpenses = existingExpensesContent
+        ? JSON.parse(existingExpensesContent)
+        : [];
+  
+      // Add the new expense to the existing list
+      const updatedExpenses = [...existingExpenses, Expense];
+  
+      // Write the updated list back to the file
+      await FileSystem.writeAsStringAsync(
+        EXPENSES_FILE_URI,
+        JSON.stringify(updatedExpenses)
+      );
 
-  function addTransactionItemHandler() {
-    setTransactionItems((currentTransactionItems) => [
-      ...currentTransactionItems,
+      Alert.alert(
+        'Save Expense',
+        'The expenses have been saved successfully.'
+      );
+    } catch (ex) {
+      console.log("Error Occurred: " + ex);
+      Alert.alert("Error","Error Occured When adding transaction")
+    }
+    setCurrentId(currentId+1);
+  };
+  
+
+  const addExpenseItemHandler = () => {
+    setExpenseItems((currentExpenseItems) => [
+      ...currentExpenseItems,
       {
         title: enteredItem,
         price: enteredPrice,
         category: enteredCategory,
       },
     ]);
+    Alert.alert(
+      'Add Expense',
+      'The expenses have been Added successfully.'
+    );
     setEnteredItem("");
     setEnteredPrice(0);
     setCategory("Others");
-  }
+  };
 
   const toggleDialog = () => {
     setVisible(!visible);
   };
 
-
   return (
     <View style={styles.container}>
-        <Text style={styles.title}>New Expense</Text>
-        <View style={styles.outerContainer}>
-          <View style={styles.inputContainer}>
-            <Dialog isVisible={visible} onBackdropPress={toggleDialog}>
-              <Dialog.Title title="Select Category" />
-              {[
-                "Food",
-                "Education",
-                "Transport",
-                "Shopping",
-                "Coffee",
-                "Stationary",
-                "Others",
-              ].map((l, i) => (
-                <CheckBox
-                  key={i}
-                  title={l}
-                  containerStyle={{ backgroundColor: "white", borderWidth: 0 }}
-                  checkedIcon="dot-circle-o"
-                  uncheckedIcon="circle-o"
-                  checked={checked === i + 1}
+      <Text style={styles.title}>New Expense</Text>
+      <View style={styles.outerContainer}>
+        <View style={styles.inputContainer}>
+          <Dialog isVisible={visible} onBackdropPress={toggleDialog}>
+            <Dialog.Title title="Select Category" />
+            {[
+              "Food",
+              "Education",
+              "Transport",
+              "Shopping",
+              "Coffee",
+              "Stationary",
+              "Others",
+            ].map((l, i) => (
+              <CheckBox
+                key={i}
+                title={l}
+                containerStyle={{ backgroundColor: "white", borderWidth: 0 }}
+                checkedIcon="dot-circle-o"
+                uncheckedIcon="circle-o"
+                checked={checked === i + 1}
+                onPress={() => {
+                  setCategory(l);
+                  setChecked(i + 1);
+                }}
+              />
+            ))}
+
+            <Dialog.Actions>
+              <View style={styles.dialogButtonContainer}>
+                <Dialog.Button title="CANCEL" onPress={toggleDialog} />
+                <Dialog.Button
+                  title="CONFIRM"
                   onPress={() => {
-                    setCategory(l);
-                    setChecked(i + 1);
+                    handleCategoryInput(enteredCategory);
+                    toggleDialog();
                   }}
                 />
-              ))}
-
-              <Dialog.Actions>
-                <View style={styles.dialogButtonContainer}>
-                  <Dialog.Button title="CANCEL" onPress={toggleDialog} />
-                  <Dialog.Button
-                    title="CONFIRM"
-                    onPress={() => {
-                      handleCategoryInput;
-                      toggleDialog();
-                    }}
-                  />
-                </View>
-              </Dialog.Actions>
-            </Dialog>
-            <Input
-              style={styles.textInput}
-              placeholder="Item"
-              onChangeText={handleTitleInput}
-              value={enteredItem}
-            />
-            <Input
-              style={styles.textInput}
-              placeholder="Price"
-              keyboardType="number-pad"
-              onChangeText={handlePriceInput}
-              value={enteredPrice}
-            />
-            <Pressable onPress={toggleDialog} style={styles.secondaryButton}>
-              <Text style={styles.buttonText}>Set Category</Text>
-            </Pressable>
-          </View>
-          <View style={styles.buttonContainer}>
-            <Pressable onPress={addTransactionItemHandler} style={styles.primaryButton}>
-              <Text style={styles.buttonText}> Add Transaction </Text>
-            </Pressable>
-            <Pressable onPress={addTransactionHandler} style={styles.primaryButton}>
-              <Text style={styles.buttonText}> Done </Text>
-            </Pressable>
-          </View>
+              </View>
+            </Dialog.Actions>
+          </Dialog>
+          <Input
+            style={styles.textInput}
+            placeholder="Item"
+            onChangeText={handleTitleInput}
+            value={enteredItem}
+          />
+          <Input
+            style={styles.textInput}
+            placeholder="Price"
+            keyboardType="number-pad"
+            onChangeText={handlePriceInput}
+            value={enteredPrice}
+          />
+          <Pressable onPress={toggleDialog} style={styles.secondaryButton}>
+            <Text style={styles.buttonText}>Set Category</Text>
+          </Pressable>
         </View>
+        <View style={styles.buttonContainer}>
+          <Pressable
+            onPress={addExpenseItemHandler}
+            style={styles.primaryButton}
+          >
+            <Text style={styles.buttonText}> Add Expense </Text>
+          </Pressable>
+          <Pressable
+            onPress={addExpenseHandler}
+            style={styles.primaryButton}
+          >
+            <Text style={styles.buttonText}> Done </Text>
+          </Pressable>
+        </View>
+      </View>
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   textInput: {
     padding: 5,
@@ -228,4 +244,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddExppense;
+export default AddExpense;
