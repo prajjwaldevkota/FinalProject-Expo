@@ -1,67 +1,160 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import * as FileSystem from 'expo-file-system';
+import React, { useState } from "react";
+import { Input } from "react-native-elements";
+import { Dialog, CheckBox } from "@rneui/themed";
+import {
+  StyleSheet,
+  ImageBackground,
+  Modal,
+  Text,
+  View,
+  Pressable,
+} from "react-native";
+import * as FileSystem from "expo-file-system";
 
-const EXPENSES_FILE_URI = FileSystem.documentDirectory + 'expenses.json';
+const EXPENSES_FILE_URI = FileSystem.documentDirectory + "expenses.json";
 
-const AddExpense = ({ navigation }) => {
-  const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('');
+const AddExppense = (props) => {
+  const [enteredItem, setEnteredItem] = useState("");
+  const [enteredPrice, setEnteredPrice] = useState(0);
+  const [enteredCategory, setCategory] = useState("Others");
+  const [transactionItems, setTransactionItems] = useState([]);
+  const [currentId, setCurrentId] = useState(9);
+  const [visible, setVisible] = useState(false);
+  const [checked, setChecked] = useState(0);
 
-  const saveExpense = async () => {
-    const newExpense = {
-      amount: parseFloat(amount), // Parse amount to float
-      category,
-      date: new Date().toISOString().split('T')[0] // Today's date
+  function handleTitleInput(enteredValue) {
+    setEnteredItem(enteredValue);
+  }
+
+  function handlePriceInput(enteredValue) {
+    setEnteredPrice(enteredValue);
+  }
+
+  function handleCategoryInput(enteredCategory) {
+    setCategory(enteredCategory);
+  }
+
+  function addTransactionHandler() {
+    const date = new Date().getDate();
+    const month = new Date().getMonth() + 1;
+    const year = new Date().getFullYear();
+    const hours = new Date().getHours();
+    const min = new Date().getMinutes();
+    const transaction = {
+      id: currentId,
+      addDate: date + "-" + "Nov",
+      addTime: hours + ":" + min,
+      transactionItems: transactionItems,
     };
-  
-    try {
-      // Check if the file exists
-      const { exists } = await FileSystem.getInfoAsync(EXPENSES_FILE_URI);
-      
-      // If the file doesn't exist, create it with an empty array
-      if (!exists) {
-        await FileSystem.writeAsStringAsync(EXPENSES_FILE_URI, '[]');
-      }
-  
-      // Read the existing content of the file
-      const content = await FileSystem.readAsStringAsync(EXPENSES_FILE_URI);
-      const expenses = JSON.parse(content) || [];
-  
-      // Add the new expense to the existing list
-      const newExpenses = [...expenses, newExpense];
-  
-      // Write the updated list back to the file
-      await FileSystem.writeAsStringAsync(EXPENSES_FILE_URI, JSON.stringify(newExpenses));
-  
-      // Optionally, navigate back to the previous screen
-       navigation.goBack();
-    } catch (error) {
-      console.error('Error saving expense:', error);
-    }
+    FileSystem.readAsStringAsync(EXPENSES_FILE_URI)
+      .then((result) => {
+        const existingTransactions = JSON.parse(result) || [];
+        const updatedTransactions = [...existingTransactions, transaction];
+        return FileSystem.writeAsStringAsync(
+          EXPENSES_FILE_URI,
+          JSON.stringify(updatedTransactions)
+        );
+      })
+      .then(() => {
+        props.onAddTransaction(transaction);
+        setCurrentId(currentId + 1);
+        setTransactionItems([]);
+        props.onCancel();
+      })
+      .catch((error) => console.error("Error:", error));
+  }
+
+  function addTransactionItemHandler() {
+    setTransactionItems((currentTransactionItems) => [
+      ...currentTransactionItems,
+      {
+        title: enteredItem,
+        price: enteredPrice,
+        category: enteredCategory,
+      },
+    ]);
+    setEnteredItem("");
+    setEnteredPrice(0);
+    setCategory("Others");
+  }
+
+  const toggleDialog = () => {
+    setVisible(!visible);
   };
-  
+
 
   return (
     <View style={styles.container}>
-      <Text>Add Expense</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Amount"
-        value={amount}
-        onChangeText={setAmount}
-        keyboardType="numeric"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Category"
-        value={category}
-        onChangeText={setCategory}
-      />
-      <Button title="Save Expense" onPress={saveExpense} />
+        <Text style={styles.title}>New Expense</Text>
+        <View style={styles.outerContainer}>
+          <View style={styles.inputContainer}>
+            <Dialog isVisible={visible} onBackdropPress={toggleDialog}>
+              <Dialog.Title title="Select Category" />
+              {[
+                "Food",
+                "Education",
+                "Transport",
+                "Shopping",
+                "Coffee",
+                "Stationary",
+                "Others",
+              ].map((l, i) => (
+                <CheckBox
+                  key={i}
+                  title={l}
+                  containerStyle={{ backgroundColor: "white", borderWidth: 0 }}
+                  checkedIcon="dot-circle-o"
+                  uncheckedIcon="circle-o"
+                  checked={checked === i + 1}
+                  onPress={() => {
+                    setCategory(l);
+                    setChecked(i + 1);
+                  }}
+                />
+              ))}
+
+              <Dialog.Actions>
+                <View style={styles.dialogButtonContainer}>
+                  <Dialog.Button title="CANCEL" onPress={toggleDialog} />
+                  <Dialog.Button
+                    title="CONFIRM"
+                    onPress={() => {
+                      handleCategoryInput;
+                      toggleDialog();
+                    }}
+                  />
+                </View>
+              </Dialog.Actions>
+            </Dialog>
+            <Input
+              style={styles.textInput}
+              placeholder="Item"
+              onChangeText={handleTitleInput}
+              value={enteredItem}
+            />
+            <Input
+              style={styles.textInput}
+              placeholder="Price"
+              keyboardType="number-pad"
+              onChangeText={handlePriceInput}
+              value={enteredPrice}
+            />
+            <Pressable onPress={toggleDialog} style={styles.secondaryButton}>
+              <Text style={styles.buttonText}>Set Category</Text>
+            </Pressable>
+          </View>
+          <View style={styles.buttonContainer}>
+            <Pressable onPress={addTransactionItemHandler} style={styles.primaryButton}>
+              <Text style={styles.buttonText}> Add Transaction </Text>
+            </Pressable>
+            <Pressable onPress={addTransactionHandler} style={styles.primaryButton}>
+              <Text style={styles.buttonText}> Done </Text>
+            </Pressable>
+          </View>
+        </View>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -69,13 +162,70 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  input: {
-    width: '80%',
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 10,
+  textInput: {
+    padding: 5,
+  },
+  outerContainer: {
+    flex: 1,
+    alignItems: "center",
+    marginHorizontal: 15,
+  },
+  inputContainer: {
+    flexDirection: "column",
+    alignItems: "center",
+    marginTop: 20,
+    width: 300,
+    padding: 15,
+    backgroundColor: "white",
+    opacity: 0.7,
+    borderRadius: 10,
+    elevation: 20,
+    borderWidth: 0.5,
+    borderColor: "black",
+    elevation: 10,
+  },
+  dialogButtonContainer: {
+    flexDirection: "row",
+  },
+  title: {
+    fontSize: 36,
+    color: "#0d0f8c",
+    marginLeft: 10,
     marginBottom: 10,
+  },
+  primaryButton: {
+    marginTop: 20,
+    marginBottom: 20,
+    marginHorizontal: 10,
+    backgroundColor: "#5372cf",
+    borderWidth: 0.5,
+    borderColor: "black",
+    borderRadius: 20,
+    padding: 10,
+    alignItems: "center",
+    elevation: 10,
+  },
+  secondaryButton: {
+    marginTop: 20,
+    marginBottom: 20,
+    backgroundColor: "#de687a",
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderWidth: 0.5,
+    borderColor: "black",
+    alignItems: "center",
+  },
+  buttonText: {
+    fontSize: 22,
+    fontWeight: "400",
+  },
+  buttonContainer: {
+    marginTop: 30,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
   },
 });
 
-export default AddExpense;
+export default AddExppense;

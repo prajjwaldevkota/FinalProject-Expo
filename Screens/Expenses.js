@@ -2,25 +2,33 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 
-
 const EXPENSES_FILE_URI = FileSystem.documentDirectory + 'expenses.json';
 
 const Expense = () => {
-  const [expenses, setExpenses] = useState([]);
+  const [expensesByDate, setExpensesByDate] = useState({});
+  const [dataChanged, setDataChanged] = useState(false);
+
+  
 
   useEffect(() => {
     loadExpenses();
-  }, [expenses]);
+  }, []); // Load expenses once when the component mounts
 
   const loadExpenses = async () => {
     try {
-      const { exists, data } = await FileSystem.getInfoAsync(EXPENSES_FILE_URI);
-      if (exists) {
-        const content = await FileSystem.readAsStringAsync(EXPENSES_FILE_URI);
-        const allExpenses = JSON.parse(content) || [];
-        const todayExpenses = allExpenses.filter(expense => expense.date === new Date().toISOString().split('T')[0]);
-        setExpenses(todayExpenses);
-      }
+      const result = await FileSystem.readAsStringAsync(EXPENSES_FILE_URI);
+      console.log(result);
+      const allExpenses = JSON.parse(result) || [];
+
+      // Group expenses by date
+      const groupedExpenses = allExpenses.reduce((acc, expense) => {
+        const date = expense.date.split('T')[0];
+        acc[date] = acc[date] || [];
+        acc[date].push(expense);
+        return acc;
+      }, {});
+
+      setExpensesByDate(groupedExpenses);
     } catch (error) {
       console.error('Error loading expenses:', error);
     }
@@ -28,9 +36,13 @@ const Expense = () => {
 
   return (
     <View style={styles.container}>
-      <Text>Today's Expenses:</Text>
-      {expenses.map((expense, index) => (
-        <Text key={index}>{expense.amount} on {expense.date} - {expense.category}</Text>
+      {Object.entries(expensesByDate).map(([date, expenses]) => (
+        <View key={date}>
+          <Text>{date}</Text>
+          {expenses.map((expense, index) => (
+            <Text key={index}>{expense.amount} - {expense.category}</Text>
+          ))}
+        </View>
       ))}
     </View>
   );
