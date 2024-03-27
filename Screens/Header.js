@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 
-function Header(props) {
-    const [budget, setBudget] = useState(0); // Initialize budget state
+const  Header = (props) => {
+    const [budget, setBudget] = useState(0); 
     const expense = props.addExpense;
     const balance = budget - expense;
 
