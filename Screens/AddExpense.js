@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "react-native-elements";
 import { Dialog, CheckBox } from "@rneui/themed";
 import {
@@ -7,7 +7,7 @@ import {
   Text,
   View,
   Pressable,
-  Alert
+  Alert,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 
@@ -21,6 +21,7 @@ const AddExpense = () => {
   const [currentId, setCurrentId] = useState(1);
   const [visible, setVisible] = useState(false);
   const [checked, setChecked] = useState(0);
+  const [currentDate, setCurrentDate] = useState(""); // State to keep track of current date
 
   const handleTitleInput = (enteredValue) => {
     setEnteredItem(enteredValue);
@@ -34,42 +35,72 @@ const AddExpense = () => {
     setCategory(enteredCategory);
   };
 
-  const addExpenseHandler = async () => {
+  useEffect(() => {
+    const checkDateChange = async () => {
+      const date = new Date().toISOString().split("T")[0];
+      if (date !== currentDate) {
+        setCurrentDate(date);
+        setCurrentId(currentId + 1);
+      }
+    };
+    checkDateChange();
+  }, []);
+
+  const addExpenseToFileHandler = async () => {
     const date = new Date();
     const Expense = {
       id: currentId,
-      date: date.toISOString().split('T')[0],
+      date: date.toISOString().split("T")[0],
+      time: date.getTime(),
       ExpenseItems: [...ExpenseItems],
     };
-  
+
     try {
+      const { exists } = await FileSystem.getInfoAsync(EXPENSES_FILE_URI);
+
+      if (!exists) {
+        // If the file doesn't exist, create it with an empty array
+        await FileSystem.writeAsStringAsync(EXPENSES_FILE_URI, "[]");
+      }
+
+      // Read the existing content of the file
       const existingExpensesContent = await FileSystem.readAsStringAsync(
         EXPENSES_FILE_URI
       );
-      const existingExpenses = existingExpensesContent
-        ? JSON.parse(existingExpensesContent)
-        : [];
-  
-      // Add the new expense to the existing list
-      const updatedExpenses = [...existingExpenses, Expense];
-  
+      const existingExpenses = JSON.parse(existingExpensesContent);
+
+      let updatedExpenses;
+      if (existingExpenses.length === 0) {
+        // If there are no existing expenses, reset ExpenseItems to an empty array
+        updatedExpenses = [Expense];
+        setExpenseItems([]); // Reset ExpenseItems state to an empty array
+      } else {
+        const existingExpenseIndex = existingExpenses.findIndex(
+          (expense) => expense.id === Expense.id
+        );
+        if (existingExpenseIndex !== -1) {
+          // If expense with the same ID exists, merge the ExpenseItems arrays
+          existingExpenses[existingExpenseIndex].ExpenseItems.push(
+            ...Expense.ExpenseItems
+          );
+        } else {
+          existingExpenses.push(Expense);
+        }
+        updatedExpenses = existingExpenses;
+      }
+
       // Write the updated list back to the file
       await FileSystem.writeAsStringAsync(
         EXPENSES_FILE_URI,
         JSON.stringify(updatedExpenses)
       );
 
-      Alert.alert(
-        'Save Expense',
-        'The expenses have been saved successfully.'
-      );
+      Alert.alert("Save Expense", "The expenses have been saved successfully.");
     } catch (ex) {
       console.log("Error Occurred: " + ex);
-      Alert.alert("Error","Error Occured When adding transaction")
+      Alert.alert("Error", "Error Occurred When adding transaction");
     }
-    setCurrentId(currentId+1);
   };
-  
 
   const addExpenseItemHandler = () => {
     setExpenseItems((currentExpenseItems) => [
@@ -80,10 +111,7 @@ const AddExpense = () => {
         category: enteredCategory,
       },
     ]);
-    Alert.alert(
-      'Add Expense',
-      'The expenses have been Added successfully.'
-    );
+    Alert.alert("Add Expense", "The expenses have been Added successfully.");
     setEnteredItem("");
     setEnteredPrice(0);
     setCategory("Others");
@@ -147,7 +175,7 @@ const AddExpense = () => {
             placeholder="Price"
             keyboardType="number-pad"
             onChangeText={handlePriceInput}
-            value={enteredPrice}
+            value={enteredPrice.toString()}
           />
           <Pressable onPress={toggleDialog} style={styles.secondaryButton}>
             <Text style={styles.buttonText}>Set Category</Text>
@@ -161,7 +189,7 @@ const AddExpense = () => {
             <Text style={styles.buttonText}> Add Expense </Text>
           </Pressable>
           <Pressable
-            onPress={addExpenseHandler}
+            onPress={addExpenseToFileHandler}
             style={styles.primaryButton}
           >
             <Text style={styles.buttonText}> Done </Text>

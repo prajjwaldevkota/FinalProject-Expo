@@ -5,8 +5,10 @@ import {
   StyleSheet,
   FlatList,
   View,
+  Pressable,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
+import Header from "./Header";
 
 const EXPENSES_FILE_URI = FileSystem.documentDirectory + "expenses.json";
 
@@ -16,7 +18,7 @@ const ExpenseItems = ({ title, price }) => (
       <Text style={styles.primaryText2}>{title}</Text>
     </View>
     <View style={styles.innerContainer2}>
-      <Text style={styles.primaryText2}>{price}</Text>
+      <Text style={styles.primaryText2}>${price}</Text>
     </View>
   </View>
 );
@@ -27,6 +29,8 @@ const Expense = () => {
 
   useEffect(() => {
     loadTransactions();
+    const interval = setInterval(loadTransactions, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadTransactions = async () => {
@@ -35,7 +39,9 @@ const Expense = () => {
       if (exists) {
         const content = await FileSystem.readAsStringAsync(EXPENSES_FILE_URI);
         const transactionsData = JSON.parse(content) || [];
+
         setTransactions(transactionsData);
+
         setExpense(calculateTotalExpense(transactionsData));
       }
     } catch (error) {
@@ -43,9 +49,10 @@ const Expense = () => {
     }
   };
 
+
   const calculateTotalExpense = (transactionsData) => {
     return transactionsData.reduce((total, transaction) => {
-      return total + getPrices(transaction.transactionItems);
+      return total + getPrices(transaction.ExpenseItems);
     }, 0);
   };
 
@@ -55,16 +62,31 @@ const Expense = () => {
     }, 0);
   };
 
+  const deleteHandler = (id) => {};
+
   const renderTransaction = ({ item }) => {
+    const formattedTime = new Date(item.time).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
     return (
-      <View style={styles.outerContainer}>
-        <View style={styles.header}>
-          <Text style={styles.secondaryText}>{item.date}</Text>
-          {item.transactionItems.map((item, index) => (
-            <ExpenseItems key={index} title={item.title} price={item.price} />
-          ))}
+      <Pressable onPress={deleteHandler(item.id)}>
+        <Header addExpense={expense} />
+
+        <View style={styles.outerContainer}>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.secondaryText}> {item.date} </Text>
+            </View>
+            <View>
+              <Text style={styles.secondaryText}> {formattedTime} </Text>
+            </View>
+          </View>
+          {item.ExpenseItems.map((item, index) => (
+          <ExpenseItems key={index} title={item.title} price={item.price} />
+        ))}
         </View>
-      </View>
+      </Pressable>
     );
   };
 
@@ -74,7 +96,7 @@ const Expense = () => {
         <FlatList
           data={transactions}
           renderItem={renderTransaction}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={(item) => item.id}
         />
       ) : (
         <Text>No transactions found.</Text>
@@ -126,13 +148,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "#f7f2f5",
     elevation: 20,
-  },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderRadius: 5,
-    borderBottomColor: "black",
-    borderBottomWidth: 0.5,
   },
   secondaryText: {
     color: "#706669",
