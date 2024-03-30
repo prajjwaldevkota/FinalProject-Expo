@@ -21,7 +21,8 @@ const AddExpense = () => {
   const [currentId, setCurrentId] = useState(1);
   const [visible, setVisible] = useState(false);
   const [checked, setChecked] = useState(0);
-  const [currentDate, setCurrentDate] = useState(""); // State to keep track of current date
+  const [currentDate, setCurrentDate] = useState("");
+  const [dateFromFile, setDateFromFile] = useState(""); // State to keep track of current date
 
   const handleTitleInput = (enteredValue) => {
     setEnteredItem(enteredValue);
@@ -37,17 +38,29 @@ const AddExpense = () => {
 
   useEffect(() => {
     const checkDateChange = async () => {
-      const date = new Date().toISOString().split("T")[0];
-      if (date !== currentDate) {
-        setCurrentDate(date);
-        setCurrentId(currentId + 1);
+      const currentDate = new Date().toISOString().split("T")[0];
+      const { exists } = await FileSystem.getInfoAsync(EXPENSES_FILE_URI);
+      if (exists) {
+        const existingExpensesContent = await FileSystem.readAsStringAsync(
+          EXPENSES_FILE_URI
+        );
+        const existingExpenses = JSON.parse(existingExpensesContent);
+        const lastExpenseDate =
+          existingExpenses.length > 0
+            ? existingExpenses[existingExpenses.length - 1].date
+            : null;
+        if (lastExpenseDate !== currentDate) {
+          setCurrentDate(currentDate);
+          setCurrentId(currentId + 1);
+        }
       }
     };
     checkDateChange();
-  }, []);
+  }, []); 
 
   const addExpenseToFileHandler = async () => {
     const date = new Date();
+    console.log(currentId);
     const Expense = {
       id: currentId,
       date: date.toISOString().split("T")[0],
@@ -68,6 +81,8 @@ const AddExpense = () => {
         EXPENSES_FILE_URI
       );
       const existingExpenses = JSON.parse(existingExpensesContent);
+
+      setDateFromFile(existingExpenses.date);
 
       let updatedExpenses;
       if (existingExpenses.length === 0) {

@@ -28,10 +28,13 @@ const Expense = () => {
   const [expense, setExpense] = useState(0);
 
   useEffect(() => {
-    loadTransactions();
-    const interval = setInterval(loadTransactions, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    const timerId = setTimeout(() => {
+      loadTransactions();
+    }, 1000);
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [transactions]);
 
   const loadTransactions = async () => {
     try {
@@ -48,7 +51,6 @@ const Expense = () => {
       console.error("Error loading transactions:", error);
     }
   };
-
 
   const calculateTotalExpense = (transactionsData) => {
     return transactionsData.reduce((total, transaction) => {
@@ -71,8 +73,6 @@ const Expense = () => {
     });
     return (
       <Pressable onPress={deleteHandler(item.id)}>
-        <Header addExpense={expense} />
-
         <View style={styles.outerContainer}>
           <View style={styles.header}>
             <View>
@@ -83,8 +83,8 @@ const Expense = () => {
             </View>
           </View>
           {item.ExpenseItems.map((item, index) => (
-          <ExpenseItems key={index} title={item.title} price={item.price} />
-        ))}
+            <ExpenseItems key={index} title={item.title} price={item.price} />
+          ))}
         </View>
       </Pressable>
     );
@@ -92,6 +92,7 @@ const Expense = () => {
 
   return (
     <View style={styles.listContainer}>
+      <Header addExpense={expense} />
       {transactions.length > 0 ? (
         <FlatList
           data={transactions}
@@ -99,7 +100,7 @@ const Expense = () => {
           keyExtractor={(item) => item.id}
         />
       ) : (
-        <Text>No transactions found.</Text>
+        <Text style={styles.noTransaction}>No transactions found. Enter Budget</Text>
       )}
     </View>
   );
@@ -166,6 +167,11 @@ const styles = StyleSheet.create({
   primaryText2: {
     color: "#d42251",
     fontSize: 18,
+  },
+  noTransaction: {
+    marginTop: 200,
+    fontSize: 20,
+    textAlign: "center",
   },
 });
 

@@ -3,8 +3,8 @@ import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
 import { PieChart } from "react-native-chart-kit";
 import * as FileSystem from "expo-file-system";
 import * as SMS from "expo-sms";
-import * as MailComposer from "expo-mail-composer"; 
-import { Audio } from 'expo-av';
+import * as MailComposer from "expo-mail-composer";
+import { Audio } from "expo-av";
 
 const EXPENSES_FILE_URI = FileSystem.documentDirectory + "expenses.json";
 
@@ -14,17 +14,20 @@ const Report = () => {
   const soundObject = useRef(new Audio.Sound()).current;
 
   useEffect(() => {
-    loadExpenseData();
-    const interval = setInterval(loadExpenseData, 10000);
-    return () => clearInterval(interval);
-  }, []);
+    const timerId = setTimeout(() => {
+      loadExpenseData();
+    }, 10);
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [categoryData]);
 
   useEffect(() => {
     const loadSound = async () => {
       try {
-        await soundObject.loadAsync(require('../assets/sms.mp3'));
+        await soundObject.loadAsync(require("../assets/sms.mp3"));
       } catch (error) {
-        console.error('Error loading sound:', error);
+        console.error("Error loading sound:", error);
       }
     };
 
