@@ -22,7 +22,6 @@ const AddExpense = () => {
   const [visible, setVisible] = useState(false);
   const [checked, setChecked] = useState(0);
   const [currentDate, setCurrentDate] = useState("");
-  const [dateFromFile, setDateFromFile] = useState(""); // State to keep track of current date
 
   const handleTitleInput = (enteredValue) => {
     setEnteredItem(enteredValue);
@@ -68,6 +67,7 @@ const AddExpense = () => {
       ExpenseItems: [...ExpenseItems],
     };
 
+
     try {
       const { exists } = await FileSystem.getInfoAsync(EXPENSES_FILE_URI);
 
@@ -82,8 +82,6 @@ const AddExpense = () => {
       );
       const existingExpenses = JSON.parse(existingExpensesContent);
 
-      setDateFromFile(existingExpenses.date);
-
       let updatedExpenses;
       if (existingExpenses.length === 0) {
         // If there are no existing expenses, reset ExpenseItems to an empty array
@@ -94,7 +92,6 @@ const AddExpense = () => {
           (expense) => expense.id === Expense.id
         );
         if (existingExpenseIndex !== -1) {
-          // If expense with the same ID exists, merge the ExpenseItems arrays
           existingExpenses[existingExpenseIndex].ExpenseItems.push(
             ...Expense.ExpenseItems
           );
@@ -103,6 +100,8 @@ const AddExpense = () => {
         }
         updatedExpenses = existingExpenses;
       }
+
+      console.log("Updated Expense" + JSON.stringify(updatedExpenses));
 
       // Write the updated list back to the file
       await FileSystem.writeAsStringAsync(
@@ -126,6 +125,7 @@ const AddExpense = () => {
         category: enteredCategory,
       },
     ]);
+
     Alert.alert("Add Expense", "The expenses have been Added successfully.");
     setEnteredItem("");
     setEnteredPrice(0);
