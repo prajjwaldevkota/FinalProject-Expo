@@ -3,15 +3,12 @@ import { Input } from "react-native-elements";
 import { Dialog, CheckBox } from "@rneui/themed";
 import {
   StyleSheet,
-  ImageBackground,
   Text,
   View,
   Pressable,
   Alert,
 } from "react-native";
-import * as FileSystem from "expo-file-system";
-
-const EXPENSES_FILE_URI = FileSystem.documentDirectory + "expenses.json";
+import { readExpensesFromFile, writeExpensesToFile } from "../Modules/storage";
 
 const AddExpense = () => {
   const [enteredItem, setEnteredItem] = useState("");
@@ -38,20 +35,11 @@ const AddExpense = () => {
   useEffect(() => {
     const checkDateChange = async () => {
       const currentDate = new Date().toISOString().split("T")[0];
-      const { exists } = await FileSystem.getInfoAsync(EXPENSES_FILE_URI);
-      if (exists) {
-        const existingExpensesContent = await FileSystem.readAsStringAsync(
-          EXPENSES_FILE_URI
-        );
-        const existingExpenses = JSON.parse(existingExpensesContent);
-        const lastExpenseDate =
-          existingExpenses.length > 0
-            ? existingExpenses[existingExpenses.length - 1].date
-            : null;
-        if (lastExpenseDate !== currentDate) {
-          setCurrentDate(currentDate);
-          setCurrentId(currentId + 1);
-        }
+      const existingExpenses = await readExpensesFromFile();
+      const lastExpenseDate = existingExpenses.length > 0 ? existingExpenses[existingExpenses.length - 1].date : null;
+      if (lastExpenseDate !== currentDate) {
+        setCurrentDate(currentDate);
+        setCurrentId(currentId + 1);
       }
     };
     checkDateChange();
@@ -67,51 +55,28 @@ const AddExpense = () => {
       ExpenseItems: [...ExpenseItems],
     };
 
-
     try {
-      const { exists } = await FileSystem.getInfoAsync(EXPENSES_FILE_URI);
-
-      if (!exists) {
-        // If the file doesn't exist, create it with an empty array
-        await FileSystem.writeAsStringAsync(EXPENSES_FILE_URI, "[]");
-      }
-
-      // Read the existing content of the file
-      const existingExpensesContent = await FileSystem.readAsStringAsync(
-        EXPENSES_FILE_URI
-      );
-      const existingExpenses = JSON.parse(existingExpensesContent);
-
       let updatedExpenses;
+      const existingExpenses = await readExpensesFromFile();
+
       if (existingExpenses.length === 0) {
-        // If there are no existing expenses, reset ExpenseItems to an empty array
         updatedExpenses = [Expense];
-        setExpenseItems([]); // Reset ExpenseItems state to an empty array
+        setExpenseItems([]);
       } else {
-        const existingExpenseIndex = existingExpenses.findIndex(
-          (expense) => expense.id === Expense.id
-        );
+        const existingExpenseIndex = existingExpenses.findIndex(expense => expense.id === Expense.id);
         if (existingExpenseIndex !== -1) {
-          existingExpenses[existingExpenseIndex].ExpenseItems.push(
-            ...Expense.ExpenseItems
-          );
+          existingExpenses[existingExpenseIndex].ExpenseItems.push(...Expense.ExpenseItems);
         } else {
           existingExpenses.push(Expense);
         }
         updatedExpenses = existingExpenses;
       }
 
-      console.log("Updated Expense" + JSON.stringify(updatedExpenses));
-
-      // Write the updated list back to the file
-      await FileSystem.writeAsStringAsync(
-        EXPENSES_FILE_URI,
-        JSON.stringify(updatedExpenses)
-      );
+      await writeExpensesToFile(updatedExpenses);
 
       Alert.alert("Save Expense", "The expenses have been saved successfully.");
-    } catch (ex) {
-      console.log("Error Occurred: " + ex);
+    } catch (error) {
+      console.error("Error Occurred: ", error);
       Alert.alert("Error", "Error Occurred When adding transaction");
     }
   };
@@ -129,7 +94,7 @@ const AddExpense = () => {
     Alert.alert("Add Expense", "The expenses have been Added successfully.");
     setEnteredItem("");
     setEnteredPrice(0);
-    setCategory("Others");
+    setCategory("");
   };
 
   const toggleDialog = () => {
@@ -256,13 +221,13 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
     marginHorizontal: 10,
-    backgroundColor: "#5372cf",
+    backgroundColor: "#56729Q",
     borderWidth: 0.5,
     borderColor: "black",
     borderRadius: 20,
     padding: 10,
     alignItems: "center",
-    elevation: 10,
+    elevation: 1,
   },
   secondaryButton: {
     marginTop: 20,

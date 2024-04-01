@@ -8,7 +8,7 @@ import {
   Pressable,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
-import Header from "./Header";
+import Header from "../Modules/header";
 
 const EXPENSES_FILE_URI = FileSystem.documentDirectory + "expenses.json";
 

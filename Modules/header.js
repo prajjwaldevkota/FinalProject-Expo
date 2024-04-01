@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, TextInput, StyleSheet, Alert } from "react-native";
+import React, { useState } from "react";
+import { View, Text, TextInput, StyleSheet } from "react-native";
 
 const Header = (props) => {
   const [budget, setBudget] = useState(0);
@@ -11,32 +11,6 @@ const Header = (props) => {
     setBudget(newBudget);
   };
 
-  useEffect(() => {
-    if (budget === 0) {
-      Alert.prompt(
-        "Enter Budget",
-        "Please enter your budget:",
-        [
-          {
-            text: "Set Budget",
-            onPress: (value) => {
-              const parsedBudget = parseFloat(value);
-              if (!isNaN(parsedBudget)) {
-                setBudget(parsedBudget);
-              } else {
-                Alert.alert("Invalid Input", "Please enter a valid number.");
-              }
-            },
-          },
-        ],
-        {
-          cancelable: false,
-          keyboardType: "numeric",
-        }
-      );
-    }
-  }, [budget]);
-
   return (
     <View style={styles.container}>
       <View style={styles.innerContainer}>
@@ -46,9 +20,10 @@ const Header = (props) => {
             style={styles.amount}
             keyboardType="numeric"
             onChangeText={(text) => handleBudgetUpdate(text)}
-            value={budget.toString()}
+            value={ budget.toString()}
           />
           <Text style={styles.dollar}>$</Text>
+          
         </View>
         <View style={styles.tab}>
           <Text style={styles.title}>Expense</Text>
@@ -96,16 +71,16 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 2,
   },
-  dollar: {
-    marginTop: 39,
-    position: "absolute",
+  dollar:{
+    marginTop:39,
+    position: 'absolute',
     fontSize: 20,
     color: "white",
     fontWeight: "400",
     textAlign: "center",
     marginBottom: 2,
     left: 30,
-  },
+  }
 });
 
 export default Header;
