@@ -14,14 +14,17 @@ const AddExpense = () => {
   const [checked, setChecked] = useState(0);
   const [currentDate, setCurrentDate] = useState("");
 
+  //handle title input
   const handleTitleInput = (enteredValue) => {
     setEnteredItem(enteredValue);
   };
 
+  //handle price input
   const handlePriceInput = (enteredValue) => {
     setEnteredPrice(enteredValue);
   };
 
+  //handle cateogry input
   const handleCategoryInput = (enteredCategory) => {
     setCategory(enteredCategory);
   };
@@ -34,7 +37,6 @@ const AddExpense = () => {
         existingExpenses.length > 0
           ? existingExpenses[existingExpenses.length - 1].date
           : null;
-      console.log(lastExpenseDate);
       if (lastExpenseDate == null) {
         setCurrentDate(currentDate);
         setCurrentId(currentId);
@@ -61,7 +63,6 @@ const AddExpense = () => {
 
       if (existingExpenses.length === 0) {
         setExpenseItems([]);
-        console.log(Expense);
         updatedExpenses = [Expense];
       } else {
         const existingExpenseIndex = existingExpenses.findIndex(
@@ -185,6 +186,7 @@ const AddExpense = () => {
   );
 };
 
+//some styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,

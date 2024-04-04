@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Modal,
   TouchableOpacity,
-  Alert,
 } from "react-native";
 
 const Header = (props) => {

@@ -5,7 +5,7 @@ import { Audio } from 'expo-av';
 
 const EXPENSES_FILE_URI = FileSystem.documentDirectory + 'expenses.json';
 
-const Setting = ({ navigation }) => {
+const Setting = () => {
   const soundObject = useRef(new Audio.Sound()).current;
 
   useEffect(() => {

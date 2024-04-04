@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Text,
-  ImageBackground,
   StyleSheet,
   FlatList,
   View,
@@ -12,6 +11,7 @@ import Header from "../Modules/header";
 
 const EXPENSES_FILE_URI = FileSystem.documentDirectory + "expenses.json";
 
+//renders the contents title and price
 const ExpenseItems = ({ title, price }) => (
   <View style={styles.outerContainer2}>
     <View style={styles.innerContainer2}>
@@ -27,6 +27,7 @@ const Expense = () => {
   const [transactions, setTransactions] = useState([]);
   const [expense, setExpense] = useState(0);
 
+  //refreshes every 1 second to get updated data from the file
   useEffect(() => {
     const timerId = setTimeout(() => {
       loadTransactions();
@@ -36,6 +37,7 @@ const Expense = () => {
     };
   }, [transactions]);
 
+  //loads every transaction
   const loadTransactions = async () => {
     try {
       const { exists } = await FileSystem.getInfoAsync(EXPENSES_FILE_URI);

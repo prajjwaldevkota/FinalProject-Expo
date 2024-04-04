@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
 import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
 import { PieChart } from "react-native-chart-kit";
-import * as FileSystem from "expo-file-system";
 import * as SMS from "expo-sms";
 import * as MailComposer from "expo-mail-composer";
 import { Audio } from "expo-av";
+import {readExpensesFromFile} from "../Modules/storage"
 
-const EXPENSES_FILE_URI = FileSystem.documentDirectory + "expenses.json";
 
 const Report = () => {
-  const [categoryData, setCategoryData] = useState([]);
-  const [date, setDate] = useState();
-  const soundObject = useRef(new Audio.Sound()).current;
+  const [categoryData, setCategoryData] = useState([]); // State to store category data for the pie chart
+  const [date, setDate] = useState(); // State to store the date of the report
+  const soundObject = useRef(new Audio.Sound()).current; // Ref for the sound object used for playing a sound on SMS send
 
   useEffect(() => {
+    // Load expense data when the component mounts
     const timerId = setTimeout(() => {
       loadExpenseData();
     }, 10);
@@ -23,6 +23,7 @@ const Report = () => {
   }, [categoryData]);
 
   useEffect(() => {
+    // Load sound when the component mounts
     const loadSound = async () => {
       try {
         await soundObject.loadAsync(require("../assets/sms.mp3"));
@@ -39,19 +40,16 @@ const Report = () => {
 
   const loadExpenseData = async () => {
     try {
-      const { exists } = await FileSystem.getInfoAsync(EXPENSES_FILE_URI);
-      if (exists) {
-        const content = await FileSystem.readAsStringAsync(EXPENSES_FILE_URI);
-        const expenses = JSON.parse(content) || [];
+        const expenses = await readExpensesFromFile() || [];
         const categoryTotal = calculateCategoryTotal(expenses);
         prepareDataForChart(categoryTotal);
-      }
     } catch (error) {
       console.error("Error loading expense data:", error);
     }
   };
 
   const calculateCategoryTotal = (expenses) => {
+    // Calculate total expenses for each category
     const categoryTotal = {};
     expenses.forEach((expense) => {
       setDate(expense.date);
@@ -64,6 +62,7 @@ const Report = () => {
   };
 
   const prepareDataForChart = (categoryTotal) => {
+    // Prepare data for the pie chart
     const data = Object.keys(categoryTotal).map((category, index) => ({
       name: category,
       amount: categoryTotal[category],
@@ -99,6 +98,7 @@ const Report = () => {
   };
 
   const generateSMSContent = (categoryData) => {
+    // Generate SMS content based on category data
     let smsContent = `Expense Report for ${date}:\n`;
     categoryData.forEach((category) => {
       smsContent += `${category.name}: ${category.amount}$\n`;
@@ -107,6 +107,7 @@ const Report = () => {
   };
 
   const generateEmailContent = (categoryData) => {
+    // Generate email content based on category data
     let emailContent = `Expense Report for ${date}:\n`;
     categoryData.forEach((category) => {
       emailContent += `${category.name}: ${category.amount}$\n`;
@@ -115,6 +116,7 @@ const Report = () => {
   };
 
   const getRandomColor = (index) => {
+    // Function to generate random colors for the pie chart
     const colors = [
       "#FF6E40",
       "#FFD740",
