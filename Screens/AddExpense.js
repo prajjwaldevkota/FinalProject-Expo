@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Input } from "react-native-elements";
 import { Dialog, CheckBox } from "@rneui/themed";
-import {
-  StyleSheet,
-  Text,
-  View,
-  Pressable,
-  Alert,
-} from "react-native";
+import { StyleSheet, Text, View, Pressable, Alert } from "react-native";
 import { readExpensesFromFile, writeExpensesToFile } from "../Modules/storage";
 
 const AddExpense = () => {
@@ -36,18 +30,24 @@ const AddExpense = () => {
     const checkDateChange = async () => {
       const currentDate = new Date().toISOString().split("T")[0];
       const existingExpenses = await readExpensesFromFile();
-      const lastExpenseDate = existingExpenses.length > 0 ? existingExpenses[existingExpenses.length - 1].date : null;
-      if (lastExpenseDate !== currentDate) {
+      const lastExpenseDate =
+        existingExpenses.length > 0
+          ? existingExpenses[existingExpenses.length - 1].date
+          : null;
+      console.log(lastExpenseDate);
+      if (lastExpenseDate == null) {
+        setCurrentDate(currentDate);
+        setCurrentId(currentId);
+      } else if (lastExpenseDate !== currentDate) {
         setCurrentDate(currentDate);
         setCurrentId(currentId + 1);
       }
     };
     checkDateChange();
-  }, []); 
+  }, []);
 
   const addExpenseToFileHandler = async () => {
     const date = new Date();
-    console.log(currentId);
     const Expense = {
       id: currentId,
       date: date.toISOString().split("T")[0],
@@ -60,12 +60,17 @@ const AddExpense = () => {
       const existingExpenses = await readExpensesFromFile();
 
       if (existingExpenses.length === 0) {
-        updatedExpenses = [Expense];
         setExpenseItems([]);
+        console.log(Expense);
+        updatedExpenses = [Expense];
       } else {
-        const existingExpenseIndex = existingExpenses.findIndex(expense => expense.id === Expense.id);
+        const existingExpenseIndex = existingExpenses.findIndex(
+          (expense) => expense.id === Expense.id
+        );
         if (existingExpenseIndex !== -1) {
-          existingExpenses[existingExpenseIndex].ExpenseItems.push(...Expense.ExpenseItems);
+          existingExpenses[existingExpenseIndex].ExpenseItems.push(
+            ...Expense.ExpenseItems
+          );
         } else {
           existingExpenses.push(Expense);
         }
@@ -116,17 +121,17 @@ const AddExpense = () => {
               "Coffee",
               "Stationary",
               "Others",
-            ].map((l, i) => (
+            ].map((category, index) => (
               <CheckBox
-                key={i}
-                title={l}
+                key={index}
+                title={category}
                 containerStyle={{ backgroundColor: "white", borderWidth: 0 }}
                 checkedIcon="dot-circle-o"
                 uncheckedIcon="circle-o"
-                checked={checked === i + 1}
+                checked={enteredCategory === category && checked === index + 1}
                 onPress={() => {
-                  setCategory(l);
-                  setChecked(i + 1);
+                  setCategory(category);
+                  setChecked(index + 1);
                 }}
               />
             ))}

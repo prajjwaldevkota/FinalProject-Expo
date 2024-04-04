@@ -1,14 +1,37 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, StyleSheet } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Modal,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 
 const Header = (props) => {
   const [budget, setBudget] = useState(0);
+  const [isModalVisible, setIsModalVisible] = useState(false);
   const expense = props.addExpense;
   const balance = budget - expense;
 
   // Function to handle budget update
   const handleBudgetUpdate = (newBudget) => {
     setBudget(newBudget);
+  };
+
+  useEffect(() => {
+    if (budget === 0) {
+      setIsModalVisible(true);
+    }
+  }, [budget]);
+
+  const closeModal = () => {
+    setIsModalVisible(false);
+  };
+
+  const handleSetBudget = () => {
+    setIsModalVisible(false);
   };
 
   return (
@@ -20,10 +43,9 @@ const Header = (props) => {
             style={styles.amount}
             keyboardType="numeric"
             onChangeText={(text) => handleBudgetUpdate(text)}
-            value={ budget.toString()}
+            value={budget.toString()}
           />
           <Text style={styles.dollar}>$</Text>
-          
         </View>
         <View style={styles.tab}>
           <Text style={styles.title}>Expense</Text>
@@ -34,6 +56,30 @@ const Header = (props) => {
           <Text style={styles.amount}>{"$ " + balance}</Text>
         </View>
       </View>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Enter Budget</Text>
+            <TextInput
+              style={styles.modalInput}
+              keyboardType="numeric"
+              onChangeText={(text) => handleBudgetUpdate(text)}
+              value={budget.toString()}
+            />
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={handleSetBudget}
+            >
+              <Text style={styles.modalButtonText}>Set Budget</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -71,16 +117,52 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 2,
   },
-  dollar:{
-    marginTop:39,
-    position: 'absolute',
+  dollar: {
+    marginTop: 39,
+    position: "absolute",
     fontSize: 20,
     color: "white",
     fontWeight: "400",
     textAlign: "center",
     marginBottom: 2,
     left: 30,
-  }
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    padding: 30,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: "grey",
+    borderRadius: 5,
+    padding: 15,
+    marginBottom: 10,
+    width: 75,
+  },
+  modalButton: {
+    backgroundColor: "blue",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  modalButtonText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
 });
 
 export default Header;
